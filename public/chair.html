@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>3D Slatted Chair</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      overflow: hidden;
+      background: #000;
+    }
+
+    #canvas-container {
+      width: 100vw;
+      height: 100vh;
+      cursor: grab;
+    }
+    #canvas-container:active { cursor: grabbing; }
+
+    .controls {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 8px;
+      z-index: 10;
+    }
+
+    .controls button {
+      background: rgba(30, 30, 30, 0.7);
+      color: #ccc;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 8px;
+      padding: 8px 18px;
+      font-size: 13px;
+      cursor: pointer;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      transition: background 0.15s, color 0.15s;
+    }
+    .controls button:hover {
+      background: rgba(50, 50, 50, 0.85);
+      color: #fff;
+    }
+    .controls button:active { transform: scale(0.97); }
+
+    .dim-toggle {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 20;
+      background: rgba(30, 30, 30, 0.7);
+      color: #ccc;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-size: 13px;
+      cursor: pointer;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      transition: background 0.15s, color 0.15s;
+    }
+    .dim-toggle:hover { background: rgba(50, 50, 50, 0.85); color: #fff; }
+
+    .dim-panel {
+      position: fixed;
+      top: 60px;
+      right: 20px;
+      z-index: 20;
+      background: rgba(30, 30, 30, 0.75);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px;
+      padding: 16px 20px;
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      opacity: 0;
+      transform: translateY(-8px);
+      pointer-events: none;
+      transition: opacity 0.2s, transform 0.2s;
+    }
+    .dim-panel.open {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+
+    .dim-panel .dim-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 24px;
+      padding: 5px 0;
+    }
+    .dim-panel .dim-row + .dim-row {
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+    .dim-panel .dim-label {
+      font-size: 12px;
+      color: #999;
+    }
+    .dim-panel .dim-value {
+      font-size: 15px;
+      color: #e0e0e0;
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="canvas-container"></div>
+
+  <button class="dim-toggle" id="btn-dims">Dimensions</button>
+  <div class="dim-panel" id="dim-panel">
+    <div class="dim-row"><span class="dim-label">Width</span><span class="dim-value">34 cm</span></div>
+    <div class="dim-row"><span class="dim-label">Total height</span><span class="dim-value">62 cm</span></div>
+    <div class="dim-row"><span class="dim-label">Depth</span><span class="dim-value">32 cm</span></div>
+    <div class="dim-row"><span class="dim-label">Seat height</span><span class="dim-value">30 cm</span></div>
+    <div class="dim-row"><span class="dim-label">Backrest</span><span class="dim-value">3 slats</span></div>
+  </div>
+
+  <div class="controls">
+    <button id="btn-reset">Reset view</button>
+    <button id="btn-explode">Explode / Assemble</button>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script>
+    (function () {
+      var ctn = document.getElementById('canvas-container');
+      var W = ctn.clientWidth, H = ctn.clientHeight;
+
+      var scene = new THREE.Scene();
+      scene.background = new THREE.Color(0xf0ede6);
+
+      var camera = new THREE.PerspectiveCamera(32, W / H, 0.1, 600);
+      var renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(W, H);
+      renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.05;
+      ctn.appendChild(renderer.domElement);
+
+      /* ---- Lights ---- */
+      scene.add(new THREE.AmbientLight(0xfff5e6, 0.5));
+      var sun = new THREE.DirectionalLight(0xfff8ee, 0.85);
+      sun.position.set(25, 40, 30);
+      sun.castShadow = true;
+      sun.shadow.mapSize.set(1024, 1024);
+      sun.shadow.camera.near = 1; sun.shadow.camera.far = 120;
+      sun.shadow.camera.left = -40; sun.shadow.camera.right = 40;
+      sun.shadow.camera.top = 40; sun.shadow.camera.bottom = -40;
+      scene.add(sun);
+      scene.add(new THREE.DirectionalLight(0xc8ddf8, 0.25).translateTo = function () {
+        this.position.set(-18, 12, -15); return this;
+      });
+      var fill = new THREE.DirectionalLight(0xc8ddf8, 0.25);
+      fill.position.set(-18, 12, -15);
+      scene.add(fill);
+      var rim = new THREE.DirectionalLight(0xffe8d0, 0.2);
+      rim.position.set(-5, 25, 30);
+      scene.add(rim);
+
+      /* ---- Material ---- */
+      var grey = new THREE.MeshStandardMaterial({ color: 0x808080, roughness: 0.5, metalness: 0 });
+
+      /* ---- Chair dimensions (cm) ---- */
+      var seatW = 30;         // seat width (X)
+      var seatD = 28;         // seat depth (Z)
+      var seatT = 1.8;        // seat thickness
+      var seatH = 26;         // seat height from floor
+      var legW = 3.2;         // leg cross-section
+      var backH = 32;         // backrest total height above seat
+      var backPostW = 3.2;    // back post width
+      var backPostD = 2.0;    // back post depth
+      var slatH = 3.0;        // horizontal slat height
+      var slatD = 1.6;        // slat depth (thickness)
+      var topSlatH = 4.2;     // top slat is taller (has cutout)
+      var cutoutW = 6;        // cutout width
+      var cutoutH = 1.8;      // cutout height
+      var strutH = 2.2;       // side/front strut height
+      var strutD = 1.6;       // strut depth
+
+      var G = new THREE.Group();
+      scene.add(G);
+      var parts = {};
+      var home = {};
+
+      function box(w, h, d, name, px, py, pz) {
+        var g = new THREE.BoxGeometry(w, h, d);
+        var mesh = new THREE.Mesh(g, grey);
+        mesh.position.set(px, py, pz);
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        if (name) { parts[name] = mesh; home[name] = [px, py, pz]; }
+        G.add(mesh);
+        return mesh;
+      }
+
+      /* ---- Front legs (shorter, only up to seat) ---- */
+      var flX = seatW / 2 - legW / 2 - 0.5;
+      var flZ = seatD / 2 - legW / 2 - 0.5;
+      box(legW, seatH, legW, 'legFL', -flX, seatH / 2, flZ);
+      box(legW, seatH, legW, 'legFR', flX, seatH / 2, flZ);
+
+      /* ---- Back legs (extend full height through backrest) ---- */
+      var blZ = -seatD / 2 + legW / 2 + 0.5;
+      var totalBackLeg = seatH + backH;
+      box(backPostW, totalBackLeg, backPostD, 'legBL', -flX, totalBackLeg / 2, blZ);
+      box(backPostW, totalBackLeg, backPostD, 'legBR', flX, totalBackLeg / 2, blZ);
+
+      /* ---- Seat ---- */
+      box(seatW, seatT, seatD, 'seat', 0, seatH + seatT / 2, 0);
+
+      /* ---- Backrest slats ---- */
+      var backInnerW = flX * 2 - backPostW;
+      var slatStartY = seatH + seatT;
+      var slatGap = (backH - topSlatH - 2 * slatH) / 3;
+      var slatZ = blZ;
+
+      // Bottom slat
+      var s1Y = slatStartY + slatGap + slatH / 2;
+      box(backInnerW, slatH, slatD, 'slat1', 0, s1Y, slatZ);
+
+      // Middle slat
+      var s2Y = s1Y + slatH / 2 + slatGap + slatH / 2;
+      box(backInnerW, slatH, slatD, 'slat2', 0, s2Y, slatZ);
+
+      // Top slat (with rectangular cutout — built from 3 pieces)
+      var s3Y = s2Y + slatH / 2 + slatGap + topSlatH / 2;
+      var sideW = (backInnerW - cutoutW) / 2;
+      // Left piece
+      box(sideW, topSlatH, slatD, 'slat3L', -(cutoutW / 2 + sideW / 2), s3Y, slatZ);
+      // Right piece
+      box(sideW, topSlatH, slatD, 'slat3R', (cutoutW / 2 + sideW / 2), s3Y, slatZ);
+      // Top bridge over cutout
+      var bridgeH = (topSlatH - cutoutH) / 2;
+      box(cutoutW, bridgeH, slatD, 'slat3Top', 0, s3Y + topSlatH / 2 - bridgeH / 2, slatZ);
+      // Bottom bridge under cutout
+      box(cutoutW, bridgeH, slatD, 'slat3Bot', 0, s3Y - topSlatH / 2 + bridgeH / 2, slatZ);
+
+      /* ---- Side stretchers (lower structural bars between front and back legs) ---- */
+      var strutY = 7;
+      var strutLen = seatD - legW - 1;
+      box(strutD, strutH, strutLen, 'strutL', -flX, strutY, 0);
+      box(strutD, strutH, strutLen, 'strutR', flX, strutY, 0);
+
+      /* ---- Front stretcher ---- */
+      var frontStrutW = seatW - legW * 2 - 1;
+      box(frontStrutW, strutH, strutD, 'strutF', 0, strutY, flZ);
+
+      /* ---- Back stretcher ---- */
+      box(frontStrutW, strutH, strutD, 'strutB', 0, strutY, blZ);
+
+      /* ---- Floor ---- */
+      var floorGeo = new THREE.PlaneGeometry(120, 100);
+      var floorMat = new THREE.MeshStandardMaterial({ color: 0xDDD8CE, roughness: 0.95 });
+      var floorMesh = new THREE.Mesh(floorGeo, floorMat);
+      floorMesh.rotation.x = -Math.PI / 2;
+      floorMesh.position.y = -0.2;
+      floorMesh.receiveShadow = true;
+      scene.add(floorMesh);
+
+      /* ---- Explode ---- */
+      var exploded = false;
+      var expOff = {
+        legFL: [-6, 0, 6], legFR: [6, 0, 6],
+        legBL: [-6, 0, -6], legBR: [6, 0, -6],
+        seat: [0, 8, 0],
+        slat1: [0, 5, -8], slat2: [0, 8, -8],
+        slat3L: [-3, 12, -8], slat3R: [3, 12, -8],
+        slat3Top: [0, 14, -8], slat3Bot: [0, 10, -8],
+        strutL: [-6, -3, 0], strutR: [6, -3, 0],
+        strutF: [0, -3, 6], strutB: [0, -3, -6]
+      };
+
+      function anim(pos, tgt) {
+        var s = { x: pos.x, y: pos.y, z: pos.z };
+        var d = 500, t0 = performance.now();
+        (function tick(now) {
+          var p = Math.min((now - t0) / d, 1);
+          var e = 1 - Math.pow(1 - p, 3);
+          pos.x = s.x + (tgt[0] - s.x) * e;
+          pos.y = s.y + (tgt[1] - s.y) * e;
+          pos.z = s.z + (tgt[2] - s.z) * e;
+          if (p < 1) requestAnimationFrame(tick);
+        })(t0);
+      }
+
+      function toggleExplode() {
+        exploded = !exploded;
+        Object.keys(parts).forEach(function (k) {
+          var h = home[k]; if (!h) return;
+          var e = expOff[k] || [0, 0, 0];
+          var tgt = exploded ? [h[0] + e[0], h[1] + e[1], h[2] + e[2]] : h;
+          anim(parts[k].position, tgt);
+        });
+      }
+
+      /* ---- Orbit ---- */
+      var drag = false, px = 0, py = 0;
+      var rotY = -0.4, rotX = 0.2, dist = 100;
+      var el = renderer.domElement;
+
+      el.addEventListener('pointerdown', function (e) {
+        drag = true; px = e.clientX; py = e.clientY;
+        el.style.cursor = 'grabbing';
+      });
+      window.addEventListener('pointerup', function () {
+        drag = false; el.style.cursor = 'grab';
+      });
+      window.addEventListener('pointermove', function (e) {
+        if (!drag) return;
+        rotY -= (e.clientX - px) * 0.007;
+        rotX += (e.clientY - py) * 0.007;
+        rotX = Math.max(-1.2, Math.min(1.2, rotX));
+        px = e.clientX; py = e.clientY;
+      });
+      el.addEventListener('wheel', function (e) {
+        e.preventDefault();
+        dist = Math.max(30, Math.min(200, dist + e.deltaY * 0.06));
+      }, { passive: false });
+
+      function resetCam() { rotY = -0.4; rotX = 0.2; dist = 100; }
+
+      /* ---- Buttons ---- */
+      document.getElementById('btn-reset').onclick = resetCam;
+      document.getElementById('btn-explode').onclick = toggleExplode;
+      document.getElementById('btn-dims').onclick = function () {
+        document.getElementById('dim-panel').classList.toggle('open');
+      };
+
+      /* ---- Render ---- */
+      (function loop() {
+        requestAnimationFrame(loop);
+        camera.position.x = Math.sin(rotY) * Math.cos(rotX) * dist;
+        camera.position.y = Math.sin(rotX) * dist + 14;
+        camera.position.z = Math.cos(rotY) * Math.cos(rotX) * dist;
+        camera.lookAt(0, 22, 0);
+        renderer.render(scene, camera);
+      })();
+
+      /* ---- Resize ---- */
+      window.addEventListener('resize', function () {
+        W = ctn.clientWidth; H = ctn.clientHeight;
+        camera.aspect = W / H;
+        camera.updateProjectionMatrix();
+        renderer.setSize(W, H);
+      });
+    })();
+  </script>
+</body>
+</html>
