@@ -49,77 +49,12 @@
     }
     .controls button:active { transform: scale(0.97); }
 
-    .dim-toggle {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      z-index: 20;
-      background: rgba(30, 30, 30, 0.7);
-      color: #ccc;
-      border: 1px solid rgba(255,255,255,0.12);
-      border-radius: 8px;
-      padding: 8px 14px;
-      font-size: 13px;
-      cursor: pointer;
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      transition: background 0.15s, color 0.15s;
-    }
-    .dim-toggle:hover { background: rgba(50, 50, 50, 0.85); color: #fff; }
-
-    .dim-panel {
-      position: fixed;
-      top: 60px;
-      right: 20px;
-      z-index: 20;
-      background: rgba(30, 30, 30, 0.75);
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 10px;
-      padding: 16px 20px;
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
-      opacity: 0;
-      transform: translateY(-8px);
-      pointer-events: none;
-      transition: opacity 0.2s, transform 0.2s;
-    }
-    .dim-panel.open {
-      opacity: 1;
-      transform: translateY(0);
-      pointer-events: auto;
-    }
-
-    .dim-panel .dim-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      gap: 24px;
-      padding: 5px 0;
-    }
-    .dim-panel .dim-row + .dim-row {
-      border-top: 1px solid rgba(255,255,255,0.06);
-    }
-    .dim-panel .dim-label {
-      font-size: 12px;
-      color: #999;
-    }
-    .dim-panel .dim-value {
-      font-size: 15px;
-      color: #e0e0e0;
-      font-weight: 500;
-    }
   </style>
 </head>
 <body>
 
   <div id="canvas-container"></div>
 
-  <button class="dim-toggle" id="btn-dims">Dimensions</button>
-  <div class="dim-panel" id="dim-panel">
-    <div class="dim-row"><span class="dim-label">X</span><span class="dim-value">36 cm</span></div>
-    <div class="dim-row"><span class="dim-label">Y</span><span class="dim-value">44 cm</span></div>
-    <div class="dim-row"><span class="dim-label">Z</span><span class="dim-value">24 cm</span></div>
-  </div>
 
   <div class="controls">
     <button id="btn-reset">Reset view</button>
@@ -342,9 +277,6 @@
       // --- Buttons ---
       document.getElementById('btn-reset').onclick = resetCam;
       document.getElementById('btn-explode').onclick = toggleExplode;
-      document.getElementById('btn-dims').onclick = function () {
-        document.getElementById('dim-panel').classList.toggle('open');
-      };
 
       // --- Render loop ---
       (function loop() {
