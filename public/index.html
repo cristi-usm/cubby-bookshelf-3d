@@ -3,197 +3,65 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>3×3 Cubby Bookshelf — 3D Viewer</title>
+  <title>3D Cubby Bookshelf</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    :root {
-      --bg: #f0ede6;
-      --card: #ffffff;
-      --text: #2c2c2a;
-      --text2: #5f5e5a;
-      --text3: #88878080;
-      --border: rgba(0,0,0,0.1);
-      --accent: #C8A86E;
-      --btn-bg: transparent;
-      --btn-border: rgba(0,0,0,0.2);
-      --btn-hover: rgba(0,0,0,0.05);
-      --scene-bg: 0xf0ede6;
-      --wall-color: 0xE8E4DC;
-      --floor-color: 0xDDD8CE;
-      --inner-color: 0xDDD4C0;
-      --handle-color: 0xB8A868;
-    }
-
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --bg: #1a1a18;
-        --card: #242422;
-        --text: #e0ddd4;
-        --text2: #a09e96;
-        --text3: #6a6862;
-        --border: rgba(255,255,255,0.08);
-        --accent: #D4B87A;
-        --btn-bg: transparent;
-        --btn-border: rgba(255,255,255,0.15);
-        --btn-hover: rgba(255,255,255,0.06);
-        --scene-bg: 0x1c1c1a;
-        --wall-color: 0x26252a;
-        --floor-color: 0x222220;
-        --inner-color: 0x2e2a24;
-        --handle-color: 0x3a3630;
-      }
-    }
-
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      min-height: 100vh;
-      padding: 2rem 1rem;
-    }
-
-    h1 {
-      font-size: 1.4rem;
-      font-weight: 500;
-      margin-bottom: 0.25rem;
-    }
-
-    .subtitle {
-      font-size: 0.875rem;
-      color: var(--text2);
-      margin-bottom: 1.25rem;
-    }
-
-    .viewer-card {
-      width: 100%;
-      max-width: 800px;
-      background: var(--card);
-      border: 0.5px solid var(--border);
-      border-radius: 12px;
       overflow: hidden;
+      background: #000;
     }
 
     #canvas-container {
-      width: 100%;
-      height: 520px;
+      width: 100vw;
+      height: 100vh;
       cursor: grab;
-      position: relative;
     }
     #canvas-container:active { cursor: grabbing; }
 
     .controls {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
       display: flex;
-      gap: 10px;
-      padding: 12px 16px;
-      align-items: center;
-      flex-wrap: wrap;
-      border-top: 0.5px solid var(--border);
+      gap: 8px;
+      z-index: 10;
     }
 
     .controls button {
-      background: var(--btn-bg);
-      color: var(--text);
-      border: 0.5px solid var(--btn-border);
+      background: rgba(30, 30, 30, 0.7);
+      color: #ccc;
+      border: 1px solid rgba(255,255,255,0.12);
       border-radius: 8px;
-      padding: 7px 16px;
+      padding: 8px 18px;
       font-size: 13px;
       cursor: pointer;
-      transition: background 0.15s;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      transition: background 0.15s, color 0.15s;
     }
-    .controls button:hover { background: var(--btn-hover); }
-    .controls button:active { transform: scale(0.98); }
-
-    .hint {
-      font-size: 12px;
-      color: var(--text3);
-      margin-left: auto;
+    .controls button:hover {
+      background: rgba(50, 50, 50, 0.85);
+      color: #fff;
     }
-
-    .specs {
-      width: 100%;
-      max-width: 800px;
-      margin-top: 1.5rem;
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-      gap: 12px;
-    }
-
-    .spec-card {
-      background: var(--card);
-      border: 0.5px solid var(--border);
-      border-radius: 10px;
-      padding: 14px 16px;
-    }
-    .spec-card .label {
-      font-size: 12px;
-      color: var(--text2);
-      margin-bottom: 4px;
-    }
-    .spec-card .value {
-      font-size: 18px;
-      font-weight: 500;
-    }
-
-    footer {
-      margin-top: 2rem;
-      font-size: 12px;
-      color: var(--text3);
-    }
+    .controls button:active { transform: scale(0.97); }
   </style>
 </head>
 <body>
 
-  <h1>3×3 Cubby Bookshelf</h1>
-  <p class="subtitle">Interactive 3D model — oak frame, MDF back, two drawers</p>
-
-  <div class="viewer-card">
-    <div id="canvas-container"></div>
-    <div class="controls">
-      <button id="btn-reset">Reset view</button>
-      <button id="btn-explode">Explode / Assemble</button>
-      <button id="btn-drawers">Open / Close drawers</button>
-      <span class="hint">Drag to orbit · Scroll to zoom</span>
-    </div>
+  <div id="canvas-container"></div>
+  <div class="controls">
+    <button id="btn-reset">Reset view</button>
+    <button id="btn-explode">Explode / Assemble</button>
   </div>
-
-  <div class="specs">
-    <div class="spec-card">
-      <div class="label">Overall width</div>
-      <div class="value">36 cm</div>
-    </div>
-    <div class="spec-card">
-      <div class="label">Overall height</div>
-      <div class="value">44 cm</div>
-    </div>
-    <div class="spec-card">
-      <div class="label">Depth</div>
-      <div class="value">24 cm</div>
-    </div>
-    <div class="spec-card">
-      <div class="label">Cubbies</div>
-      <div class="value">3 × 3</div>
-    </div>
-    <div class="spec-card">
-      <div class="label">Drawers</div>
-      <div class="value">2</div>
-    </div>
-    <div class="spec-card">
-      <div class="label">Material</div>
-      <div class="value">Oak + MDF</div>
-    </div>
-  </div>
-
-  <footer>Built with Three.js r128</footer>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script>
     (function () {
       const ctn = document.getElementById('canvas-container');
-      const W = ctn.clientWidth, H = 520;
+      let W = ctn.clientWidth, H = ctn.clientHeight;
       const isDark = matchMedia('(prefers-color-scheme:dark)').matches;
 
       // --- Scene setup ---
@@ -233,18 +101,16 @@
       rim.position.set(-5, 20, 30);
       scene.add(rim);
 
-      // --- Materials ---
-      function M(c, r) {
-        return new THREE.MeshStandardMaterial({ color: c, roughness: r || 0.68, metalness: 0 });
-      }
-      const oak   = M(0xC8A86E, 0.6);
-      const oakL  = M(0xD4B87A, 0.55);
-      const oakD  = M(0xB09060, 0.65);
-      const mdf   = M(0x9E8468, 0.85);
-      const inner = M(isDark ? 0x2e2a24 : 0xDDD4C0, 0.9);
-      const drawerMat = M(0xCCB278, 0.58);
-      const handleMat = M(isDark ? 0x3a3630 : 0xB8A868, 0.7);
-      const drawerBoxMat = M(0xB8A060, 0.8);
+      // --- Materials (Blender default grey) ---
+      const grey = new THREE.MeshStandardMaterial({ color: 0x808080, roughness: 0.5, metalness: 0 });
+      const oak = grey;
+      const oakL = grey;
+      const oakD = grey;
+      const mdf = grey;
+      const inner = grey;
+      const drawerMat = grey;
+      const handleMat = grey;
+      const drawerBoxMat = grey;
 
       // --- Dimensions ---
       const TW = 36, TH = 44, TD = 24;
@@ -274,7 +140,6 @@
       box(TW, PT, TD, oakL, 'top', 0, TH / 2 - PT / 2, 0);
       box(TW, PT, TD, oak, 'bot', 0, -TH / 2 + drawerH + PT / 2, 0);
       box(TW, drawerH, TD, oakD, 'drawerBase', 0, -TH / 2 + drawerH / 2, 0);
-      box(TW, PT, TD, oak, 'floor', 0, -TH / 2 + PT / 2, 0);
 
       box(PT, TH, TD, oak, 'sideL', -TW / 2 + PT / 2, 0, 0);
       box(PT, TH, TD, oak, 'sideR', TW / 2 - PT / 2, 0, 0);
@@ -336,24 +201,6 @@
       makeDrawer('drawerL', -TW / 2 + PT + dw / 2 + PT / 2);
       makeDrawer('drawerR', TW / 2 - PT - dw / 2 - PT / 2);
 
-      // --- Environment: wall + floor ---
-      const wallMesh = new THREE.Mesh(
-        new THREE.PlaneGeometry(100, 70),
-        new THREE.MeshStandardMaterial({ color: isDark ? 0x26252a : 0xE8E4DC, roughness: 0.95 })
-      );
-      wallMesh.position.set(0, 8, -TD / 2 - 1);
-      wallMesh.receiveShadow = true;
-      scene.add(wallMesh);
-
-      const floorMesh = new THREE.Mesh(
-        new THREE.PlaneGeometry(100, 80),
-        new THREE.MeshStandardMaterial({ color: isDark ? 0x222220 : 0xDDD8CE, roughness: 0.95 })
-      );
-      floorMesh.rotation.x = -Math.PI / 2;
-      floorMesh.position.y = -TH / 2 - 0.5;
-      floorMesh.receiveShadow = true;
-      scene.add(floorMesh);
-
       // --- Animation helper ---
       function anim(pos, tgt) {
         const s = { x: pos.x, y: pos.y, z: pos.z };
@@ -371,7 +218,7 @@
       // --- Explode ---
       let exploded = false;
       const expOff = {
-        top: [0, 7, 0], bot: [0, 0, 0], drawerBase: [0, -5, 0], floor: [0, -8, 0],
+        top: [0, 7, 0], bot: [0, 0, 0], drawerBase: [0, -5, 0],
         sideL: [-7, 0, 0], sideR: [7, 0, 0],
         hShelf1: [0, 2, 3], hShelf2: [0, 4, 3],
         vDiv1: [-3, 0, 3], vDiv2: [3, 0, 3],
@@ -389,20 +236,10 @@
         });
       }
 
-      // --- Drawers ---
-      let drawersOpen = false;
-      function toggleDrawers() {
-        if (exploded) return;
-        drawersOpen = !drawersOpen;
-        var dz = drawersOpen ? 10 : 0;
-        var hL = home['drawerL'], hR = home['drawerR'];
-        anim(parts['drawerL'].position, [hL[0], hL[1], hL[2] + dz]);
-        anim(parts['drawerR'].position, [hR[0], hR[1], hR[2] + dz]);
-      }
 
       // --- Orbit controls (manual) ---
       let drag = false, px = 0, py = 0;
-      let rotY = -0.35, rotX = 0.2, dist = 80;
+      let rotY = -0.2, rotX = 0.12, dist = 115;
       const el = renderer.domElement;
 
       el.addEventListener('pointerdown', function (e) {
@@ -424,12 +261,11 @@
         dist = Math.max(30, Math.min(160, dist + e.deltaY * 0.06));
       }, { passive: false });
 
-      function resetCam() { rotY = -0.35; rotX = 0.2; dist = 80; }
+      function resetCam() { rotY = -0.2; rotX = 0.12; dist = 115; }
 
       // --- Buttons ---
       document.getElementById('btn-reset').onclick = resetCam;
       document.getElementById('btn-explode').onclick = toggleExplode;
-      document.getElementById('btn-drawers').onclick = toggleDrawers;
 
       // --- Render loop ---
       (function loop() {
@@ -443,10 +279,11 @@
 
       // --- Resize ---
       window.addEventListener('resize', function () {
-        var nw = ctn.clientWidth;
-        camera.aspect = nw / H;
+        W = ctn.clientWidth;
+        H = ctn.clientHeight;
+        camera.aspect = W / H;
         camera.updateProjectionMatrix();
-        renderer.setSize(nw, H);
+        renderer.setSize(W, H);
       });
     })();
   </script>
