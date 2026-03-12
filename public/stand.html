@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>3D Slatted Chair</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🪑</text></svg>">
+  <title>3D Low Shelf Table</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🗄️</text></svg>">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -99,15 +99,8 @@
     .dim-panel .dim-row + .dim-row {
       border-top: 1px solid rgba(255,255,255,0.06);
     }
-    .dim-panel .dim-label {
-      font-size: 12px;
-      color: #999;
-    }
-    .dim-panel .dim-value {
-      font-size: 15px;
-      color: #e0e0e0;
-      font-weight: 500;
-    }
+    .dim-panel .dim-label { font-size: 12px; color: #999; }
+    .dim-panel .dim-value { font-size: 15px; color: #e0e0e0; font-weight: 500; }
   </style>
 </head>
 <body>
@@ -116,11 +109,11 @@
 
   <button class="dim-toggle" id="btn-dims">Dimensions</button>
   <div class="dim-panel" id="dim-panel">
-    <div class="dim-row"><span class="dim-label">Width</span><span class="dim-value">34 cm</span></div>
-    <div class="dim-row"><span class="dim-label">Total height</span><span class="dim-value">62 cm</span></div>
-    <div class="dim-row"><span class="dim-label">Depth</span><span class="dim-value">32 cm</span></div>
-    <div class="dim-row"><span class="dim-label">Seat height</span><span class="dim-value">30 cm</span></div>
-    <div class="dim-row"><span class="dim-label">Backrest</span><span class="dim-value">3 slats</span></div>
+    <div class="dim-row"><span class="dim-label">Width</span><span class="dim-value">48 cm</span></div>
+    <div class="dim-row"><span class="dim-label">Height</span><span class="dim-value">20 cm</span></div>
+    <div class="dim-row"><span class="dim-label">Depth</span><span class="dim-value">24 cm</span></div>
+    <div class="dim-row"><span class="dim-label">Legs</span><span class="dim-value">4 × 3 cm</span></div>
+    <div class="dim-row"><span class="dim-label">Shelves</span><span class="dim-value">2 open slats</span></div>
   </div>
 
   <div class="controls">
@@ -157,9 +150,6 @@
       sun.shadow.camera.left = -40; sun.shadow.camera.right = 40;
       sun.shadow.camera.top = 40; sun.shadow.camera.bottom = -40;
       scene.add(sun);
-      scene.add(new THREE.DirectionalLight(0xc8ddf8, 0.25).translateTo = function () {
-        this.position.set(-18, 12, -15); return this;
-      });
       var fill = new THREE.DirectionalLight(0xc8ddf8, 0.25);
       fill.position.set(-18, 12, -15);
       scene.add(fill);
@@ -170,22 +160,24 @@
       /* ---- Material ---- */
       var grey = new THREE.MeshStandardMaterial({ color: 0x808080, roughness: 0.5, metalness: 0 });
 
-      /* ---- Chair dimensions (cm) ---- */
-      var seatW = 30;         // seat width (X)
-      var seatD = 28;         // seat depth (Z)
-      var seatT = 1.8;        // seat thickness
-      var seatH = 26;         // seat height from floor
-      var legW = 3.2;         // leg cross-section
-      var backH = 32;         // backrest total height above seat
-      var backPostW = 3.2;    // back post width
-      var backPostD = 2.0;    // back post depth
-      var slatH = 3.0;        // horizontal slat height
-      var slatD = 1.6;        // slat depth (thickness)
-      var topSlatH = 4.2;     // top slat is taller (has cutout)
-      var cutoutW = 6;        // cutout width
-      var cutoutH = 1.8;      // cutout height
-      var strutH = 2.2;       // side/front strut height
-      var strutD = 1.6;       // strut depth
+      /* ---- Dimensions (cm) ---- */
+      var TW = 48;
+      var TH = 20;
+      var TD = 24;
+      var topT = 1.6;
+      var legS = 3.0;
+      var legH = TH - topT;
+      var shelfT = 1.2;
+
+      var lx = TW / 2 - legS / 2 - 0.5;
+      var lz = TD / 2 - legS / 2 - 0.5;
+
+      var gap = legH / 3;
+      var shelf1Y = gap;
+      var shelf2Y = gap * 2;
+
+      var shelfW = lx * 2 - legS;
+      var shelfD = lz * 2 - legS;
 
       var G = new THREE.Group();
       scene.add(G);
@@ -203,65 +195,51 @@
         return mesh;
       }
 
-      /* ---- Front legs (shorter, only up to seat) ---- */
-      var flX = seatW / 2 - legW / 2 - 0.5;
-      var flZ = seatD / 2 - legW / 2 - 0.5;
-      box(legW, seatH, legW, 'legFL', -flX, seatH / 2, flZ);
-      box(legW, seatH, legW, 'legFR', flX, seatH / 2, flZ);
+      /* ---- Tabletop ---- */
+      box(TW, topT, TD, 'tabletop', 0, legH + topT / 2, 0);
 
-      /* ---- Back legs (extend full height through backrest) ---- */
-      var blZ = -seatD / 2 + legW / 2 + 0.5;
-      var totalBackLeg = seatH + backH;
-      box(backPostW, totalBackLeg, backPostD, 'legBL', -flX, totalBackLeg / 2, blZ);
-      box(backPostW, totalBackLeg, backPostD, 'legBR', flX, totalBackLeg / 2, blZ);
+      /* ---- 4 Legs ---- */
+      box(legS, legH, legS, 'legFL', -lx, legH / 2, lz);
+      box(legS, legH, legS, 'legFR', lx, legH / 2, lz);
+      box(legS, legH, legS, 'legBL', -lx, legH / 2, -lz);
+      box(legS, legH, legS, 'legBR', lx, legH / 2, -lz);
 
-      /* ---- Seat ---- */
-      box(seatW, seatT, seatD, 'seat', 0, seatH + seatT / 2, 0);
+      /* ---- Shelf slats — planks running left-to-right, sitting on side rails ---- */
+      var slatCount = 4;
+      var slatGap = 0.6;
+      var totalGaps = (slatCount - 1) * slatGap;
+      var slatD = (shelfD - totalGaps) / slatCount;
 
-      /* ---- Backrest slats ---- */
-      var backInnerW = flX * 2 - backPostW;
-      var slatStartY = seatH + seatT;
-      var slatGap = (backH - topSlatH - 2 * slatH) / 3;
-      var slatZ = blZ;
+      for (var s = 0; s < slatCount; s++) {
+        var sz = -shelfD / 2 + slatD / 2 + s * (slatD + slatGap);
+        box(shelfW, shelfT, slatD, 'slat1_' + s, 0, shelf1Y, sz);
+        box(shelfW, shelfT, slatD, 'slat2_' + s, 0, shelf2Y, sz);
+      }
 
-      // Bottom slat
-      var s1Y = slatStartY + slatGap + slatH / 2;
-      box(backInnerW, slatH, slatD, 'slat1', 0, s1Y, slatZ);
+      /* ---- Side rails (left & right, connecting front to back leg at each shelf level) ---- */
+      var railW = 1.4;
+      var railH = 1.6;
+      var railLen = lz * 2;
 
-      // Middle slat
-      var s2Y = s1Y + slatH / 2 + slatGap + slatH / 2;
-      box(backInnerW, slatH, slatD, 'slat2', 0, s2Y, slatZ);
+      box(railW, railH, railLen, 'railL1', -lx, shelf1Y, 0);
+      box(railW, railH, railLen, 'railR1', lx, shelf1Y, 0);
+      box(railW, railH, railLen, 'railL2', -lx, shelf2Y, 0);
+      box(railW, railH, railLen, 'railR2', lx, shelf2Y, 0);
 
-      // Top slat (with rectangular cutout — built from 3 pieces)
-      var s3Y = s2Y + slatH / 2 + slatGap + topSlatH / 2;
-      var sideW = (backInnerW - cutoutW) / 2;
-      // Left piece
-      box(sideW, topSlatH, slatD, 'slat3L', -(cutoutW / 2 + sideW / 2), s3Y, slatZ);
-      // Right piece
-      box(sideW, topSlatH, slatD, 'slat3R', (cutoutW / 2 + sideW / 2), s3Y, slatZ);
-      // Top bridge over cutout
-      var bridgeH = (topSlatH - cutoutH) / 2;
-      box(cutoutW, bridgeH, slatD, 'slat3Top', 0, s3Y + topSlatH / 2 - bridgeH / 2, slatZ);
-      // Bottom bridge under cutout
-      box(cutoutW, bridgeH, slatD, 'slat3Bot', 0, s3Y - topSlatH / 2 + bridgeH / 2, slatZ);
+      /* ---- Front & back apron rails just under tabletop ---- */
+      var apronW = lx * 2;
+      var apronH = 2.0;
+      var apronD = 1.4;
+      var apronY = legH - apronH / 2 - 0.2;
 
-      /* ---- Side stretchers (lower structural bars between front and back legs) ---- */
-      var strutY = 7;
-      var strutLen = seatD - legW - 1;
-      box(strutD, strutH, strutLen, 'strutL', -flX, strutY, 0);
-      box(strutD, strutH, strutLen, 'strutR', flX, strutY, 0);
-
-      /* ---- Front stretcher ---- */
-      var frontStrutW = seatW - legW * 2 - 1;
-      box(frontStrutW, strutH, strutD, 'strutF', 0, strutY, flZ);
-
-      /* ---- Back stretcher ---- */
-      box(frontStrutW, strutH, strutD, 'strutB', 0, strutY, blZ);
+      box(apronW, apronH, apronD, 'apronF', 0, apronY, lz);
+      box(apronW, apronH, apronD, 'apronB', 0, apronY, -lz);
 
       /* ---- Floor ---- */
-      var floorGeo = new THREE.PlaneGeometry(120, 100);
-      var floorMat = new THREE.MeshStandardMaterial({ color: 0xDDD8CE, roughness: 0.95 });
-      var floorMesh = new THREE.Mesh(floorGeo, floorMat);
+      var floorMesh = new THREE.Mesh(
+        new THREE.PlaneGeometry(120, 100),
+        new THREE.MeshStandardMaterial({ color: 0xDDD8CE, roughness: 0.95 })
+      );
       floorMesh.rotation.x = -Math.PI / 2;
       floorMesh.position.y = -0.2;
       floorMesh.receiveShadow = true;
@@ -270,25 +248,27 @@
       /* ---- Explode ---- */
       var exploded = false;
       var expOff = {
-        legFL: [-6, 0, 6], legFR: [6, 0, 6],
-        legBL: [-6, 0, -6], legBR: [6, 0, -6],
-        seat: [0, 8, 0],
-        slat1: [0, 5, -8], slat2: [0, 8, -8],
-        slat3L: [-3, 12, -8], slat3R: [3, 12, -8],
-        slat3Top: [0, 14, -8], slat3Bot: [0, 10, -8],
-        strutL: [-6, -3, 0], strutR: [6, -3, 0],
-        strutF: [0, -3, 6], strutB: [0, -3, -6]
+        tabletop: [0, 10, 0],
+        legFL: [-7, 0, 7], legFR: [7, 0, 7],
+        legBL: [-7, 0, -7], legBR: [7, 0, -7],
+        railL1: [-9, -2, 0], railR1: [9, -2, 0],
+        railL2: [-9, 2, 0], railR2: [9, 2, 0],
+        apronF: [0, 7, 7], apronB: [0, 7, -7]
       };
+      for (var s = 0; s < slatCount; s++) {
+        expOff['slat1_' + s] = [0, -5, 3 + s * 2];
+        expOff['slat2_' + s] = [0, 4, -3 - s * 2];
+      }
 
       function anim(pos, tgt) {
-        var s = { x: pos.x, y: pos.y, z: pos.z };
+        var st = { x: pos.x, y: pos.y, z: pos.z };
         var d = 500, t0 = performance.now();
         (function tick(now) {
           var p = Math.min((now - t0) / d, 1);
           var e = 1 - Math.pow(1 - p, 3);
-          pos.x = s.x + (tgt[0] - s.x) * e;
-          pos.y = s.y + (tgt[1] - s.y) * e;
-          pos.z = s.z + (tgt[2] - s.z) * e;
+          pos.x = st.x + (tgt[0] - st.x) * e;
+          pos.y = st.y + (tgt[1] - st.y) * e;
+          pos.z = st.z + (tgt[2] - st.z) * e;
           if (p < 1) requestAnimationFrame(tick);
         })(t0);
       }
@@ -305,7 +285,7 @@
 
       /* ---- Orbit ---- */
       var drag = false, px = 0, py = 0;
-      var rotY = -0.4, rotX = 0.2, dist = 140;
+      var rotY = -0.4, rotX = 0.45, dist = 110;
       var el = renderer.domElement;
 
       el.addEventListener('pointerdown', function (e) {
@@ -324,10 +304,10 @@
       });
       el.addEventListener('wheel', function (e) {
         e.preventDefault();
-        dist = Math.max(30, Math.min(200, dist + e.deltaY * 0.06));
+        dist = Math.max(20, Math.min(200, dist + e.deltaY * 0.06));
       }, { passive: false });
 
-      function resetCam() { rotY = -0.4; rotX = 0.2; dist = 140; }
+      function resetCam() { rotY = -0.4; rotX = 0.45; dist = 110; }
 
       /* ---- Buttons ---- */
       document.getElementById('btn-reset').onclick = resetCam;
@@ -337,12 +317,13 @@
       };
 
       /* ---- Render ---- */
+      var lookY = TH / 2;
       (function loop() {
         requestAnimationFrame(loop);
         camera.position.x = Math.sin(rotY) * Math.cos(rotX) * dist;
-        camera.position.y = Math.sin(rotX) * dist + 14;
+        camera.position.y = Math.sin(rotX) * dist + 6;
         camera.position.z = Math.cos(rotY) * Math.cos(rotX) * dist;
-        camera.lookAt(0, 22, 0);
+        camera.lookAt(0, lookY, 0);
         renderer.render(scene, camera);
       })();
 
