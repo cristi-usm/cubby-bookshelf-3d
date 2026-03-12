@@ -109,10 +109,6 @@
       const oakL = grey;
       const oakD = grey;
       const mdf = grey;
-      const inner = grey;
-      const drawerMat = grey;
-      const handleMat = grey;
-      const drawerBoxMat = grey;
 
       // --- Dimensions ---
       const TW = 36, TH = 44, TD = 24;
@@ -170,47 +166,17 @@
       // Back panel
       box(TW - 2 * PT, TH - 2 * PT, 0.6, mdf, 'backPanel', 0, 0, -TD / 2 + 0.3 + PT / 2);
 
-      // Inner cubby depth fills
-      for (let r = 0; r < rows; r++) {
-        for (let c = 0; c < cols; c++) {
-          const cx = -TW / 2 + PT + c * (cellW + PT) + cellW / 2 + PT / 2;
-          const cy = shelfStartY + PT + r * (cellH + PT) + cellH / 2 + PT / 2;
-          box(cellW - 0.4, cellH - 0.4, 0.3, inner, null, cx, cy, -TD / 2 + PT + 0.5);
-        }
-      }
-
-      // --- Drawers ---
+      // --- Drawer fronts ---
       const dw = (TW - 3 * PT) / 2;
-      const dy = -TH / 2 + drawerH / 2 + PT;
-      const dzClose = TD / 2 - 0.5;
+      const dy = -TH / 2 + drawerH / 2;
+      const dzFront = TD / 2 - 0.6;
 
-      function makeDrawer(name, posX) {
-        const grp = new THREE.Group();
+      box(dw, drawerH - PT, 1.2, oak, 'drawerL', -TW / 2 + PT + dw / 2 + PT / 2, dy, dzFront);
+      box(dw, drawerH - PT, 1.2, oak, 'drawerR', TW / 2 - PT - dw / 2 - PT / 2, dy, dzFront);
 
-        const front = new THREE.Mesh(new THREE.BoxGeometry(dw, drawerH - PT, 1.2), drawerMat);
-        front.position.set(0, 0, dzClose);
-        front.castShadow = true;
-        grp.add(front);
-
-        const handle = new THREE.Mesh(new THREE.BoxGeometry(4, 1.2, 0.8), handleMat);
-        handle.position.set(0, 1, dzClose + 0.6);
-        handle.castShadow = true;
-        grp.add(handle);
-
-        const body = new THREE.Mesh(new THREE.BoxGeometry(dw - 1, drawerH - PT - 1, TD - 4), drawerBoxMat);
-        body.position.set(0, -0.5, 0);
-        body.castShadow = true;
-        grp.add(body);
-
-        grp.position.set(posX, dy, 0);
-        parts[name] = grp;
-        home[name] = [posX, dy, 0];
-        G.add(grp);
-        return grp;
-      }
-
-      makeDrawer('drawerL', -TW / 2 + PT + dw / 2 + PT / 2);
-      makeDrawer('drawerR', TW / 2 - PT - dw / 2 - PT / 2);
+      // Handles
+      box(4, 1.2, 0.8, oakD, null, -TW / 2 + PT + dw / 2 + PT / 2, dy + 1, dzFront + 0.8);
+      box(4, 1.2, 0.8, oakD, null, TW / 2 - PT - dw / 2 - PT / 2, dy + 1, dzFront + 0.8);
 
       // --- Animation helper ---
       function anim(pos, tgt) {
@@ -229,16 +195,17 @@
       // --- Explode ---
       let exploded = false;
       const expOff = {
-        top: [0, 7, 0], bot: [0, 0, 0], drawerBase: [0, -5, 0],
+        top: [0, 7, 0], bot: [0, -3, 0], drawerBase: [0, -5, 0],
         sideL: [-7, 0, 0], sideR: [7, 0, 0],
         hShelf1: [0, 2, 3], hShelf2: [0, 4, 3],
         vDiv1: [-3, 0, 3], vDiv2: [3, 0, 3],
         backPanel: [0, 0, -8],
-        drawerL: [-4, -6, 10], drawerR: [4, -6, 10]
+        drawerL: [-4, -6, 12], drawerR: [4, -6, 12]
       };
 
       function toggleExplode() {
         exploded = !exploded;
+        floorMesh.visible = !exploded;
         Object.keys(parts).forEach(function (k) {
           const h = home[k]; if (!h) return;
           const e = expOff[k] || [0, 0, 0];
@@ -246,7 +213,6 @@
           anim(parts[k].position, tgt);
         });
       }
-
 
       // --- Orbit controls (manual) ---
       let drag = false, px = 0, py = 0;

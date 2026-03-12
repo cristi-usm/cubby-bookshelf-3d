@@ -228,6 +228,7 @@
 
       function toggleExplode() {
         exploded = !exploded;
+        floorMesh.visible = !exploded;
         Object.keys(parts).forEach(function (k) {
           var h = home[k]; if (!h) return;
           var e = expOff[k] || [0, 0, 0];

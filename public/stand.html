@@ -99,6 +99,8 @@
 
       /* ---- Material ---- */
       var grey = new THREE.MeshStandardMaterial({ color: 0x808080, roughness: 0.5, metalness: 0 });
+      var mTabletop = grey, mLegs = grey, mSlat1 = grey, mSlat2 = grey;
+      var mRail1 = grey, mRail2 = grey, mApron = grey;
 
       /* ---- Dimensions (cm) ---- */
       var TW = 48;
@@ -124,9 +126,9 @@
       var parts = {};
       var home = {};
 
-      function box(w, h, d, name, px, py, pz) {
+      function box(w, h, d, mat, name, px, py, pz) {
         var g = new THREE.BoxGeometry(w, h, d);
-        var mesh = new THREE.Mesh(g, grey);
+        var mesh = new THREE.Mesh(g, mat);
         mesh.position.set(px, py, pz);
         mesh.castShadow = true;
         mesh.receiveShadow = true;
@@ -136,13 +138,13 @@
       }
 
       /* ---- Tabletop ---- */
-      box(TW, topT, TD, 'tabletop', 0, legH + topT / 2, 0);
+      box(TW, topT, TD, mTabletop, 'tabletop', 0, legH + topT / 2, 0);
 
       /* ---- 4 Legs ---- */
-      box(legS, legH, legS, 'legFL', -lx, legH / 2, lz);
-      box(legS, legH, legS, 'legFR', lx, legH / 2, lz);
-      box(legS, legH, legS, 'legBL', -lx, legH / 2, -lz);
-      box(legS, legH, legS, 'legBR', lx, legH / 2, -lz);
+      box(legS, legH, legS, mLegs, 'legFL', -lx, legH / 2, lz);
+      box(legS, legH, legS, mLegs, 'legFR', lx, legH / 2, lz);
+      box(legS, legH, legS, mLegs, 'legBL', -lx, legH / 2, -lz);
+      box(legS, legH, legS, mLegs, 'legBR', lx, legH / 2, -lz);
 
       /* ---- Shelf slats — planks running left-to-right, sitting on side rails ---- */
       var slatCount = 4;
@@ -152,8 +154,8 @@
 
       for (var s = 0; s < slatCount; s++) {
         var sz = -shelfD / 2 + slatD / 2 + s * (slatD + slatGap);
-        box(shelfW, shelfT, slatD, 'slat1_' + s, 0, shelf1Y, sz);
-        box(shelfW, shelfT, slatD, 'slat2_' + s, 0, shelf2Y, sz);
+        box(shelfW, shelfT, slatD, mSlat1, 'slat1_' + s, 0, shelf1Y, sz);
+        box(shelfW, shelfT, slatD, mSlat2, 'slat2_' + s, 0, shelf2Y, sz);
       }
 
       /* ---- Side rails (left & right, connecting front to back leg at each shelf level) ---- */
@@ -161,10 +163,10 @@
       var railH = 1.6;
       var railLen = lz * 2;
 
-      box(railW, railH, railLen, 'railL1', -lx, shelf1Y, 0);
-      box(railW, railH, railLen, 'railR1', lx, shelf1Y, 0);
-      box(railW, railH, railLen, 'railL2', -lx, shelf2Y, 0);
-      box(railW, railH, railLen, 'railR2', lx, shelf2Y, 0);
+      box(railW, railH, railLen, mRail1, 'railL1', -lx, shelf1Y, 0);
+      box(railW, railH, railLen, mRail1, 'railR1', lx, shelf1Y, 0);
+      box(railW, railH, railLen, mRail2, 'railL2', -lx, shelf2Y, 0);
+      box(railW, railH, railLen, mRail2, 'railR2', lx, shelf2Y, 0);
 
       /* ---- Front & back apron rails just under tabletop ---- */
       var apronW = lx * 2;
@@ -172,8 +174,8 @@
       var apronD = 1.4;
       var apronY = legH - apronH / 2 - 0.2;
 
-      box(apronW, apronH, apronD, 'apronF', 0, apronY, lz);
-      box(apronW, apronH, apronD, 'apronB', 0, apronY, -lz);
+      box(apronW, apronH, apronD, mApron, 'apronF', 0, apronY, lz);
+      box(apronW, apronH, apronD, mApron, 'apronB', 0, apronY, -lz);
 
       /* ---- Floor ---- */
       var floorMesh = new THREE.Mesh(
@@ -191,13 +193,13 @@
         tabletop: [0, 10, 0],
         legFL: [-7, 0, 7], legFR: [7, 0, 7],
         legBL: [-7, 0, -7], legBR: [7, 0, -7],
-        railL1: [-9, -2, 0], railR1: [9, -2, 0],
-        railL2: [-9, 2, 0], railR2: [9, 2, 0],
+        railL1: [-9, -4, 0], railR1: [9, -4, 0],
+        railL2: [-9, 4, 0], railR2: [9, 4, 0],
         apronF: [0, 7, 7], apronB: [0, 7, -7]
       };
       for (var s = 0; s < slatCount; s++) {
-        expOff['slat1_' + s] = [0, -5, 3 + s * 2];
-        expOff['slat2_' + s] = [0, 4, -3 - s * 2];
+        expOff['slat1_' + s] = [0, -7, 3 + s * 4];
+        expOff['slat2_' + s] = [s * 5, 7, 0];
       }
 
       function anim(pos, tgt) {
@@ -215,6 +217,7 @@
 
       function toggleExplode() {
         exploded = !exploded;
+        floorMesh.visible = !exploded;
         Object.keys(parts).forEach(function (k) {
           var h = home[k]; if (!h) return;
           var e = expOff[k] || [0, 0, 0];
